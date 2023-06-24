@@ -1,13 +1,13 @@
-package blabber;
+package blabber.Room.MessageArea;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 
 public class Message {
-    String content;
-    String sender;
-    String timestamp;
+    public String content;
+    public String sender;
+    public String timestamp;
 
     public Message(String content, String sender) {
         this.content = content;
