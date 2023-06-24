@@ -4,25 +4,110 @@
 package blabber;
 
 import javax.swing.*;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
+
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Scanner;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.event.ActionEvent;
 
 public class App {
 
-    private static void createAndShowGUI() {
-        // Create and set up the window.
-        JFrame frame = new JFrame("HelloWorldSwing");
+    JFrame frame;
+    JTextPane textArea;
+    StyledDocument doc;
+    Queue queue;
+    Tab tab;
+    JTextField input;
+
+    private void refreshUI() {
+        // StyleContext context = new StyleContext();
+        // Style style = context.addStyle("timestamp", null);
+        // StyleConstants.setForeground(style, Color.RED);
+
+        try {
+            for (Message msg : queue.messages) {
+                String temp = "";
+                temp += " [" + msg.timestamp + "] ";
+                temp += msg.sender + ": ";
+                temp += msg.content;
+                temp += "\n";
+                doc.insertString(doc.getLength(), temp, null);
+            }
+
+        } catch (BadLocationException ble) {
+            System.err.println("Couldn't insert");
+        }
+        // textArea.setText(buffer);
+    }
+
+    private void uiLoop() {
+        frame = new JFrame();
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
 
-        JLabel label = new JLabel("Hello World");
-        frame.getContentPane().add(label);
+        textArea = new JTextPane();
+        textArea.setEditable(false);
+        input = new JTextField();
 
-        frame.pack();
+        doc = textArea.getStyledDocument();
+
+        queue = new Queue();
+        // Create and set up the window.
+
+        input.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (textArea.getText().equals("No messages yet")) {
+                    textArea.setText("");
+                }
+                input.setText("");
+                queue.submit(e.getActionCommand().toString(), "Zane");
+
+                refreshUI();
+            }
+        });
+
+        JScrollPane scrollArea = new JScrollPane(textArea);
+
+        frame.add(scrollArea, BorderLayout.CENTER);
+        frame.add(input, BorderLayout.SOUTH);
+
+        frame.setSize(400, 500);
         frame.setVisible(true);
     }
 
     public static void main(String[] args) {
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                createAndShowGUI();
+                // final ServerSocket serverSocket;
+                // final Socket clientSocket;
+                // final BufferedReader in;
+                // final PrintWriter out;
+                // final Scanner sc = new Scanner(System.in);
+
+                // try {
+                // serverSocket = new ServerSocket(5123);
+                // } catch (IOException e) {
+                // e.printStackTrace();
+                // }
+
+                App app = new App();
+                app.uiLoop();
             }
         });
     }
