@@ -6,7 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import blabber.Room.HostRoom;
+import blabber.Room.*;
 import blabber.Storage.Storage;
 
 public class App {
@@ -38,6 +38,11 @@ public class App {
             tabPane = new JTabbedPane();
             tabPane.add("Host", new HostRoom());
             add(tabPane);
+            this.addConnectedRoom("Client");
+        }
+
+        public void addConnectedRoom(String name) {
+            tabPane.addTab(name, new ConnectedRoom());
         }
 
     }

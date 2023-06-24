@@ -10,16 +10,17 @@ import javax.swing.JScrollPane;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 
 import blabber.Room.*;
 
 public class MessageArea {
 
-    public JScrollPane main;
     public Connection connection;
 
-    private JTextPane messageArea;
+    private JTextArea messageArea;
     private InputField inputField;
 
     // constructor
@@ -27,8 +28,9 @@ public class MessageArea {
         connection = baseConnection;
 
         inputField = new InputField(this);
-        messageArea = new JTextPane();
-        main = new JScrollPane(messageArea);
+        messageArea = new JTextArea(20, 10);
+        messageArea.setEditable(false);
+
     }
 
     // getters
@@ -36,7 +38,7 @@ public class MessageArea {
         return inputField;
     }
 
-    public JTextPane getMessageArea() {
+    public JTextArea getMessageArea() {
         return messageArea;
     }
 
@@ -53,15 +55,12 @@ public class MessageArea {
 
     public void appendMessage(Message message) {
 
-        StyledDocument doc = messageArea.getStyledDocument();
+        messageArea.append("[" + message.timestamp + "] ");
+        messageArea.append(message.sender + ": ");
+        messageArea.append(message.content + "\n");
 
-        try {
-            doc.insertString(doc.getLength(), "[" + message.timestamp + "] ", null);
-            doc.insertString(doc.getLength(), message.sender + ": ", null);
-            doc.insertString(doc.getLength(), message.content + "\n", null);
-        } catch (BadLocationException ex) {
-            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        this.inputField.getInput().setText("");
+
     }
 
 }

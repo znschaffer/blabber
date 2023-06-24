@@ -25,7 +25,6 @@ public class Room extends JPanel {
         setLayout(new BorderLayout());
         messageArea = new MessageArea(connection);
         messageArea.addToJPanel(this);
-
     }
 
     public class ClientWorker extends SwingWorker<Void, Message> {
@@ -73,9 +72,8 @@ public class Room extends JPanel {
     }
 
     /**
-     * Instantiates a new SwingWorker to asynchryonously check all connected sockets
+     * Instantiates a new SwingWorker to asynchronously check all connected sockets
      * for new messages.
-     * 
      */
     protected void createClientWorker() {
         ClientWorker clientWorker = new ClientWorker();
