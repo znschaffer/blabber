@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,7 +20,7 @@ import blabber.Room.MessageArea.Message;
 public class HostRoom extends Room {
 
     private ArrayList<Message> messages;
-    private ArrayList<Connection> connections;
+    private ArrayList<Connection> connections = new ArrayList<>();
     private ServerSocket serverSocket;
 
     public HostRoom() {
@@ -28,6 +29,7 @@ public class HostRoom extends Room {
 
         // Start hosting socket service
         host();
+        super.createClientWorker();
     }
 
     /**
@@ -57,6 +59,32 @@ public class HostRoom extends Room {
     }
 
     /**
+     * Instantiates a new SwingWorker to asynchryonously check all connected sockets
+     * for new messages.
+     * 
+     */
+    protected void createConnectionWorker() {
+        ConnectionWorker connectionWorker = new ConnectionWorker();
+        connectionWorker.addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                System.out.println(connectionWorker.getState());
+                if (connectionWorker.getState() == SwingWorker.StateValue.DONE) {
+                    try {
+                        connectionWorker.get();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (ExecutionException ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    // shutdown();
+                }
+            }
+        });
+        connectionWorker.execute();
+    }
+
+    /**
      * Starts hosting a socket on localhost port 8080. Keeps watching for connecting
      * sockets and adds them to the connection queue. Starts the hostworker thread
      * as well.
@@ -65,13 +93,16 @@ public class HostRoom extends Room {
     protected void host() {
         try {
             serverSocket = new ServerSocket(8080);
-            createHostWorker();
+
+            // Add self to connection pool
             Socket selfSocket = new Socket("localhost", 8080);
-            while (true) {
-                Socket socket = serverSocket.accept();
-                Connection connection = new Connection(socket);
-                connections.add(connection);
-            }
+            connection = new Connection(selfSocket);
+
+            connections.add(connection);
+            createHostWorker();
+            createConnectionWorker();
+            // Add peers as needed
+
         } catch (IOException ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -95,7 +126,21 @@ public class HostRoom extends Room {
         }
     }
 
-    private class HostWorker extends SwingWorker<Void, Message> {
+    public class HostWorker extends SwingWorker<Void, Message> {
+
+        public AtomicBoolean continueListening;
+
+        public HostWorker() {
+            continueListening = new AtomicBoolean(true);
+        }
+
+        public void stopListening() {
+            continueListening.set(false);
+            try {
+                serverSocket.close();
+            } catch (IOException ex) {
+            }
+        }
 
         @Override
         protected void process(List<Message> chunks) {
@@ -111,16 +156,58 @@ public class HostRoom extends Room {
 
         @Override
         protected Void doInBackground() throws Exception {
-            for (Connection connection : connections) {
-                try {
-                    // Check if inputStream has data waiting
-                    if (connection.inputStream.available() != 0) {
-                        // Publish that data
+            while (continueListening.get()) {
+                for (Connection connection : connections) {
+                    try {
+                        // Check if inputStream has data waiting
+                        if (connection.inputStream.available() != 0) {
+                            // Publish that data
 
-                        Message message = new Message(connection.inputStream.readUTF(),
-                                connection.socket.getInetAddress().toString());
-                        publish(message);
+                            Message message = new Message(connection.inputStream.readUTF(),
+                                    connection.socket.getInetAddress().toString());
+                            publish(message);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
+                }
+            }
+
+            return null;
+        }
+
+    }
+
+    public class ConnectionWorker extends SwingWorker<Void, Connection> {
+        private AtomicBoolean continueSearching;
+
+        public ConnectionWorker() {
+            continueSearching = new AtomicBoolean(true);
+        }
+
+        public void stopSearching() {
+            continueSearching.set(false);
+            try {
+                serverSocket.close();
+            } catch (IOException ex) {
+            }
+        }
+
+        @Override
+        protected void process(List<Connection> chunks) {
+            for (Connection connection : chunks) {
+                connections.add(connection);
+            }
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            while (continueSearching.get()) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    Connection connection = new Connection(socket);
+                    publish(connection);
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

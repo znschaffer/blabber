@@ -47,6 +47,7 @@ public class MessageWorker extends SwingWorker<Void, String> {
     @Override
     protected Void doInBackground() throws Exception {
         while (continueReading.get()) {
+
             String text = dataInputStream.readUTF();
             publish(text);
         }

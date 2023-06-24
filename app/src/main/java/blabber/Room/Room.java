@@ -20,7 +20,6 @@ import blabber.Room.MessageArea.MessageArea;
 public class Room extends JPanel {
     protected MessageArea messageArea;
     protected Connection connection;
-    protected PanelUI panelUI;
 
     public Room() {
         setLayout(new BorderLayout());

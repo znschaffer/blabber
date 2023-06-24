@@ -15,7 +15,9 @@ public class ConnectedRoom extends Room {
     DataOutputStream outputStream;
 
     public ConnectedRoom() {
+        super();
 
+        super.createClientWorker();
     }
 
     protected void connect(String addr) {
@@ -23,9 +25,10 @@ public class ConnectedRoom extends Room {
             socket = new Socket(addr, 8080);
             inputStream = new DataInputStream(socket.getInputStream());
             outputStream = new DataOutputStream(socket.getOutputStream());
-            createMessageWorker();
+            // createMessageWorker();
         } catch (IOException ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
 }

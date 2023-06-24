@@ -8,20 +8,24 @@ public class InputField {
 
     private JTextField input;
     private ActionListener listener;
+    private MessageArea parent;
 
-    public InputField() {
+    // constructor
+    public InputField(MessageArea messageArea) {
+        parent = messageArea;
         input = new JTextField(10);
         listener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String text = input.getText();
-                sendMessage(text);
+                Message message = new Message(input.getText(), "Sender");
+                parent.appendMessage(message);
             }
         };
 
         input.addActionListener(listener);
     }
 
+    // getters + setters
     public JTextField getInput() {
         return input;
     }
@@ -29,9 +33,5 @@ public class InputField {
     public void setInput(JTextField input) {
         this.input = input;
     }
-
-    private void sendMessage(String text) {
-        return;
-    };
 
 }

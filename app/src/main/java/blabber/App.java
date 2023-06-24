@@ -6,6 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
+import blabber.Room.HostRoom;
 import blabber.Storage.Storage;
 
 public class App {
@@ -34,7 +35,9 @@ public class App {
         private Storage storage;
 
         public AppPane() {
-
+            tabPane = new JTabbedPane();
+            tabPane.add("Host", new HostRoom());
+            add(tabPane);
         }
 
     }
