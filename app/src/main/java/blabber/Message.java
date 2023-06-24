@@ -14,4 +14,10 @@ public class Message {
         this.sender = sender;
         this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT));
     }
+
+    public Message(String content) {
+        this.content = content;
+        this.sender = "STATUS";
+        this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT));
+    }
 }
