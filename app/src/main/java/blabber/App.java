@@ -1,7 +1,6 @@
 package blabber;
 
 import java.awt.BorderLayout;
-import java.awt.Canvas;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -79,7 +78,7 @@ public class App {
 
             add(actionsPanel, BorderLayout.NORTH);
             messageArea.addToJPanel(this);
-            add(drawArea.canvas, BorderLayout.CENTER);
+            add(drawArea, BorderLayout.CENTER);
 
             startServerButton.addActionListener(new ActionListener() {
                 @Override
