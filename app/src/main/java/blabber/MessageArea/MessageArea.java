@@ -1,24 +1,34 @@
 package blabber.MessageArea;
 
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
 import blabber.App.AppPane;
-
-import java.awt.BorderLayout;
-import java.io.IOException;
+import blabber.App.AppPane.Connection;
 
 public class MessageArea {
 
     private JTextArea messageArea;
     private InputField inputField;
-
+    private ActionListener listener;
     public AppPane parent;
 
     // constructor
-    public MessageArea(AppPane app) {
-        parent = app;
-        inputField = new InputField(this);
+    public MessageArea(Connection connection) {
+        inputField = new InputField();
+        listener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                connection.sendText(inputField.getText());
+                appendMessage(new Message(inputField.getText(), "Sent"));
+                inputField.setText(null);
+            }
+        };
+        inputField.addActionListener(listener);
         messageArea = new JTextArea(20, 15);
         messageArea.setEditable(false);
     }
@@ -34,8 +44,7 @@ public class MessageArea {
 
     // methods
     public void addToJPanel(JPanel panel) {
-        panel.add(inputField.getInput(), BorderLayout.SOUTH);
-
+        panel.add(inputField, BorderLayout.SOUTH);
         panel.add(messageArea, BorderLayout.WEST);
     }
 
@@ -44,14 +53,7 @@ public class MessageArea {
         messageArea.append(message.sender + ": ");
         messageArea.append(message.content + "\n");
 
-        this.inputField.getInput().setText("");
-    }
-
-    public void sendOutput(String content) {
-        try {
-            parent.outputStream.writeUTF(content);
-        } catch (IOException e) {
-        }
+        this.inputField.setText("");
     }
 
 }

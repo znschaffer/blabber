@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -55,15 +54,68 @@ public class App {
         private Socket socket;
         private ReadMessageWorker readWorker;
 
-        private DataInputStream inputStream;
-        public DataOutputStream outputStream;
+        public Connection connection;
 
         private ServerSocket serverSocket;
+
+        public class Connection {
+            public DataInputStream inputStream;
+
+            public void setInputStream(DataInputStream inputStream) {
+                this.inputStream = inputStream;
+            }
+
+            public DataInputStream getInput() {
+                return this.inputStream;
+            }
+
+            public DataOutputStream outputStream;
+
+            public void setOutput(DataOutputStream outputStream) {
+                this.outputStream = outputStream;
+            }
+
+            public DataOutputStream getOutput() {
+                return this.outputStream;
+            }
+
+            public void sendText(String text) {
+                try {
+                    this.outputStream.writeUTF(text);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            public String readText() {
+                try {
+                    return this.inputStream.readUTF();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+
+            }
+
+            public void close() {
+                try {
+                    this.inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    this.outputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
         public AppPane() {
             this.setLayout(new BorderLayout());
 
-            drawArea = new DrawingArea(this);
+            this.connection = new Connection();
+            drawArea = new DrawingArea(connection);
 
             startServerButton = new JButton("Start server");
             startClientButton = new JButton("Start client");
@@ -75,7 +127,7 @@ public class App {
             actionsPanel.add(startClientButton);
             actionsPanel.add(shutDownButton);
 
-            messageArea = new MessageArea(this);
+            messageArea = new MessageArea(connection);
 
             add(actionsPanel, BorderLayout.NORTH);
             messageArea.addToJPanel(this);
@@ -146,8 +198,8 @@ public class App {
                 didStartClient();
                 messageArea.appendMessage(new Message("Connecting to server"));
                 socket = new Socket("localhost", 8080);
-                inputStream = new DataInputStream(socket.getInputStream());
-                outputStream = new DataOutputStream(socket.getOutputStream());
+                connection.setInputStream(new DataInputStream(socket.getInputStream()));
+                connection.setOutput(new DataOutputStream(socket.getOutputStream()));
 
                 messageArea.appendMessage(new Message("Connected to server\n"));
 
@@ -164,9 +216,8 @@ public class App {
                 messageArea.appendMessage(new Message("Waiting for client"));
                 Socket socket = serverSocket.accept();
                 messageArea.appendMessage(new Message("Client connected\n"));
-
-                inputStream = new DataInputStream(socket.getInputStream());
-                outputStream = new DataOutputStream(socket.getOutputStream());
+                connection.setInputStream(new DataInputStream(socket.getInputStream()));
+                connection.setOutput(new DataOutputStream(socket.getOutputStream()));
                 createMessageWorker();
             } catch (IOException ex) {
 
@@ -190,9 +241,9 @@ public class App {
         }
 
         protected void createMessageWorker() {
-            readWorker = new ReadMessageWorker(inputStream, new ReadMessageWorker.MessageListener() {
+            readWorker = new ReadMessageWorker(connection, new ReadMessageWorker.MessageListener() {
                 @Override
-                public void didRecieveMessage(String message) {
+                public void onMessage(String message) {
                     if (message.startsWith("Draw_")) {
                         String[] msgs = message.split("_");
                         drawArea.paintSquare(Integer.parseInt(msgs[1]), Integer.parseInt(msgs[2]));
@@ -208,11 +259,6 @@ public class App {
                 public void propertyChange(PropertyChangeEvent evt) {
                     System.out.println(readWorker.getState());
                     if (readWorker.getState() == SwingWorker.StateValue.DONE) {
-                        try {
-                            readWorker.get();
-                        } catch (InterruptedException ex) {
-                        } catch (ExecutionException ex) {
-                        }
                         shutdown();
                     }
                 }
@@ -234,26 +280,21 @@ public class App {
                 } catch (IOException ex) {
                 }
             }
+            if (!readWorker.isDone()) {
+                readWorker.stopReading();
+            }
         }
 
         protected void shutdownServer() {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException ex) {
-                }
-            }
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException ex) {
-                }
-            }
+            connection.close();
             if (serverSocket != null) {
                 try {
                     serverSocket.close();
                 } catch (IOException ex) {
                 }
+            }
+            if (!readWorker.isDone()) {
+                readWorker.stopReading();
             }
         }
 

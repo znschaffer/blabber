@@ -1,25 +1,25 @@
 package blabber;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.SwingWorker;
 
+import blabber.App.AppPane.Connection;
+
 public class ReadMessageWorker extends SwingWorker<Void, String> {
 
   public interface MessageListener {
 
-    public void didRecieveMessage(String message);
+    public void onMessage(String message);
   }
 
-  private DataInputStream dataInputStream;
+  private Connection connection;
   private AtomicBoolean continueReading;
   private MessageListener listener;
 
-  public ReadMessageWorker(DataInputStream dataInputStream, MessageListener listener) {
-    this.dataInputStream = dataInputStream;
+  public ReadMessageWorker(Connection connection, MessageListener listener) {
+    this.connection = connection;
     this.listener = listener;
     continueReading = new AtomicBoolean(true);
 
@@ -28,22 +28,19 @@ public class ReadMessageWorker extends SwingWorker<Void, String> {
   @Override
   protected void process(List<String> chunks) {
     for (String message : chunks) {
-      listener.didRecieveMessage(message);
+      listener.onMessage(message);
     }
   }
 
   public void stopReading() {
     continueReading.set(false);
-    try {
-      dataInputStream.close();
-    } catch (IOException ex) {
-    }
+    connection.close();
   }
 
   @Override
   protected Void doInBackground() throws Exception {
     while (continueReading.get()) {
-      String text = dataInputStream.readUTF();
+      String text = connection.readText();
       publish(text);
     }
 
