@@ -195,16 +195,7 @@ public class App {
                 public void didRecieveMessage(String message) {
                     if (message.startsWith("Draw_")) {
                         String[] msgs = message.split("_");
-                        String x = msgs[1];
-                        String y = msgs[2];
-
-                        Logger logger = Logger.getLogger("logger");
-
-                        logger.info(x);
-                        logger.info(y);
-                        logger.info(message);
-
-                        drawArea.paintSquare(Integer.parseInt(x), Integer.parseInt(y));
+                        drawArea.paintSquare(Integer.parseInt(msgs[1]), Integer.parseInt(msgs[2]));
                     } else if (message.startsWith("Clear")) {
                         drawArea.clear();
                     } else {
