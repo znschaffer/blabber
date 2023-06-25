@@ -6,9 +6,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.DataOutputStream;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
+
+import blabber.App.AppPane;
 
 public class DrawingArea extends JPanel {
 
@@ -16,37 +19,44 @@ public class DrawingArea extends JPanel {
   private int squareY = -10;
   private int squareW = 5;
   private int squareH = 5;
-  private int rounding = 5;
 
   private JButton clearButton = new JButton("Clear");
+  private AppPane parent;
 
-  public DrawingArea() {
-
+  public DrawingArea(AppPane p) {
+    parent = p;
     this.add(clearButton);
     clearButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent arg0) {
-        squareX = -10;
-        squareY = -10;
-        repaint();
+        clear();
+        parent.sendClearOutput();
       }
     });
 
     this.addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent e) {
         paintSquare(e.getX(), e.getY());
+        parent.sendDrawOutput(e.getX(), e.getY());
       }
     });
 
     addMouseMotionListener(new MouseAdapter() {
       public void mouseDragged(MouseEvent e) {
         paintSquare(e.getX(), e.getY());
+        parent.sendDrawOutput(e.getX(), e.getY());
       }
     });
 
   }
 
-  private void paintSquare(int x, int y) {
+  public void clear() {
+    squareX = -10;
+    squareY = -10;
+    repaint();
+  }
+
+  public void paintSquare(int x, int y) {
     if ((squareX != x) || (squareY != y)) {
       squareX = x;
       squareY = y;

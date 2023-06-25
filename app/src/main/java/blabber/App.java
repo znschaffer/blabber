@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -62,7 +63,7 @@ public class App {
         public AppPane() {
             this.setLayout(new BorderLayout());
 
-            drawArea = new DrawingArea();
+            drawArea = new DrawingArea(this);
 
             startServerButton = new JButton("Start server");
             startClientButton = new JButton("Start client");
@@ -109,6 +110,20 @@ public class App {
                 }
             });
 
+        }
+
+        public void sendDrawOutput(int x, int y) {
+            try {
+                outputStream.writeUTF("Draw_" + String.valueOf(x) + "_" + String.valueOf(y));
+            } catch (IOException e) {
+            }
+        }
+
+        public void sendClearOutput() {
+            try {
+                outputStream.writeUTF("Clear");
+            } catch (IOException e) {
+            }
         }
 
         protected void didStartClient() {
@@ -178,7 +193,23 @@ public class App {
             readWorker = new ReadMessageWorker(inputStream, new ReadMessageWorker.MessageListener() {
                 @Override
                 public void didRecieveMessage(String message) {
-                    messageArea.appendMessage(new Message(message, "Received"));
+                    if (message.startsWith("Draw_")) {
+                        String[] msgs = message.split("_");
+                        String x = msgs[1];
+                        String y = msgs[2];
+
+                        Logger logger = Logger.getLogger("logger");
+
+                        logger.info(x);
+                        logger.info(y);
+                        logger.info(message);
+
+                        drawArea.paintSquare(Integer.parseInt(x), Integer.parseInt(y));
+                    } else if (message.startsWith("Clear")) {
+                        drawArea.clear();
+                    } else {
+                        messageArea.appendMessage(new Message(message, "Received"));
+                    }
                 }
             });
             readWorker.addPropertyChangeListener(new PropertyChangeListener() {
