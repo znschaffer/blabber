@@ -1,32 +1,23 @@
 package blabber.Room.MessageArea;
 
-import javax.swing.JTextPane;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.StyledDocument;
-
-import blabber.App;
-
-import javax.swing.JScrollPane;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
-import java.awt.BorderLayout;
-import java.awt.Dimension;
 
-import blabber.Room.*;
+import blabber.Room.Room;
+
+import java.awt.BorderLayout;
 
 public class MessageArea {
-
-    public Connection connection;
 
     private JTextArea messageArea;
     private InputField inputField;
 
-    // constructor
-    public MessageArea(Connection baseConnection) {
-        connection = baseConnection;
+    public Room parent;
 
+    // constructor
+    public MessageArea(Room room) {
+
+        parent = room;
         inputField = new InputField(this);
         messageArea = new JTextArea(20, 10);
         messageArea.setEditable(false);
@@ -46,11 +37,6 @@ public class MessageArea {
     public void addToJPanel(JPanel panel) {
         panel.add(messageArea, BorderLayout.CENTER);
         panel.add(inputField.getInput(), BorderLayout.SOUTH);
-    }
-
-    public void onSendMessage(Message message) {
-        connection.write(message.content);
-        appendMessage(message);
     }
 
     public void appendMessage(Message message) {
