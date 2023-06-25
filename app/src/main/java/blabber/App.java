@@ -1,6 +1,7 @@
 package blabber;
 
 import java.awt.BorderLayout;
+import java.awt.Canvas;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,17 +12,16 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
-import blabber.Room.*;
-import blabber.Room.MessageArea.Message;
+import blabber.DrawingArea.DrawingArea;
+import blabber.MessageArea.Message;
+import blabber.MessageArea.MessageArea;
 
 public class App {
 
@@ -49,7 +49,8 @@ public class App {
         private JButton startClientButton;
         private JButton shutDownButton;
 
-        public Room room;
+        public MessageArea messageArea;
+        public DrawingArea drawArea;
 
         private Socket socket;
         private ReadMessageWorker readWorker;
@@ -60,8 +61,9 @@ public class App {
         private ServerSocket serverSocket;
 
         public AppPane() {
-            room = new Room(this);
-            add(room);
+            this.setLayout(new BorderLayout());
+
+            drawArea = new DrawingArea();
 
             startServerButton = new JButton("Start server");
             startClientButton = new JButton("Start client");
@@ -73,7 +75,11 @@ public class App {
             actionsPanel.add(startClientButton);
             actionsPanel.add(shutDownButton);
 
+            messageArea = new MessageArea(this);
+
             add(actionsPanel, BorderLayout.NORTH);
+            messageArea.addToJPanel(this);
+            add(drawArea.canvas, BorderLayout.CENTER);
 
             startServerButton.addActionListener(new ActionListener() {
                 @Override
@@ -124,12 +130,12 @@ public class App {
         protected void createClient() {
             try {
                 didStartClient();
-                room.messageArea.appendMessage(new Message("Connecting to server"));
+                messageArea.appendMessage(new Message("Connecting to server"));
                 socket = new Socket("localhost", 8080);
                 inputStream = new DataInputStream(socket.getInputStream());
                 outputStream = new DataOutputStream(socket.getOutputStream());
 
-                room.messageArea.appendMessage(new Message("Connected to server\n"));
+                messageArea.appendMessage(new Message("Connected to server\n"));
 
                 createMessageWorker();
             } catch (IOException ex) {
@@ -139,11 +145,11 @@ public class App {
         protected void createServer() {
             try {
                 didStartServer();
-                room.messageArea.appendMessage(new Message("Starting server"));
+                messageArea.appendMessage(new Message("Starting server"));
                 serverSocket = new ServerSocket(8080);
-                room.messageArea.appendMessage(new Message("Waiting for client"));
+                messageArea.appendMessage(new Message("Waiting for client"));
                 Socket socket = serverSocket.accept();
-                room.messageArea.appendMessage(new Message("Client connected\n"));
+                messageArea.appendMessage(new Message("Client connected\n"));
 
                 inputStream = new DataInputStream(socket.getInputStream());
                 outputStream = new DataOutputStream(socket.getOutputStream());
@@ -169,58 +175,11 @@ public class App {
             shutDownButton.setEnabled(true);
         }
 
-        // Message Worker
-        public class ReadMessageWorker extends SwingWorker<Void, String> {
-
-            public interface MessageListener {
-
-                public void didRecieveMessage(String message);
-            }
-
-            private DataInputStream dataInputStream;
-            private AtomicBoolean continueReading;
-            private MessageListener listener;
-
-            public ReadMessageWorker(DataInputStream dataInputStream, MessageListener listener) {
-                this.dataInputStream = dataInputStream;
-                this.listener = listener;
-                continueReading = new AtomicBoolean(true);
-            }
-
-            @Override
-            protected void process(List<String> chunks) {
-                for (String message : chunks) {
-                    listener.didRecieveMessage(message);
-                }
-            }
-
-            public void stopReading() {
-                continueReading.set(false);
-                try {
-                    dataInputStream.close();
-                } catch (IOException ex) {
-                }
-            }
-
-            @Override
-            protected Void doInBackground() throws Exception {
-                while (continueReading.get()) {
-                    String text = dataInputStream.readUTF();
-                    publish(text);
-                }
-
-                System.out.println("Read is now down...");
-
-                return null;
-            }
-
-        }
-
         protected void createMessageWorker() {
             readWorker = new ReadMessageWorker(inputStream, new ReadMessageWorker.MessageListener() {
                 @Override
                 public void didRecieveMessage(String message) {
-                    room.messageArea.appendMessage(new Message(message, "Received"));
+                    messageArea.appendMessage(new Message(message, "Received"));
                 }
             });
             readWorker.addPropertyChangeListener(new PropertyChangeListener() {
@@ -243,7 +202,7 @@ public class App {
         protected void shutdown() {
             shutdownServer();
             shutdownSocket();
-            room.messageArea.appendMessage(new Message("\nShutdown completed\n"));
+            messageArea.appendMessage(new Message("\nShutdown completed\n"));
             didShutdown();
         }
 

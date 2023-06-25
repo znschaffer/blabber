@@ -1,4 +1,4 @@
-package blabber.Room.MessageArea;
+package blabber.MessageArea;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
@@ -24,14 +24,9 @@ public class InputField {
         listener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
-                try {
-                    parent.parent.parent.outputStream.writeUTF(input.getText());
-                    parent.appendMessage(new Message(input.getText(), "Sent"));
-                    input.setText(null);
-                } catch (IOException ex) {
-                }
-
+                parent.sendOutput(input.getText());
+                parent.appendMessage(new Message(input.getText(), "Sent"));
+                input.setText(null);
             }
         };
 

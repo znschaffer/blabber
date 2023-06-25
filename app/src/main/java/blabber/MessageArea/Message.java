@@ -1,4 +1,4 @@
-package blabber.Room.MessageArea;
+package blabber.MessageArea;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

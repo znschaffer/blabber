@@ -1,4 +1,4 @@
-package blabber.Room;
+package blabber;
 
 import java.awt.Color;
 import java.awt.Font;

@@ -1,4 +1,4 @@
-package blabber.Room.MessageArea;
+package blabber.MessageArea;
 
 public enum MessageType {
 
