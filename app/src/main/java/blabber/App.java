@@ -11,7 +11,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.ExecutionException;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -97,6 +96,20 @@ public class App {
 
             }
 
+            public void sendDrawOutput(int x, int y) {
+                try {
+                    this.outputStream.writeUTF("Draw_" + String.valueOf(x) + "_" + String.valueOf(y));
+                } catch (IOException e) {
+                }
+            }
+
+            public void sendClearOutput() {
+                try {
+                    this.outputStream.writeUTF("Clear");
+                } catch (IOException e) {
+                }
+            }
+
             public void close() {
                 try {
                     this.inputStream.close();
@@ -162,20 +175,6 @@ public class App {
                 }
             });
 
-        }
-
-        public void sendDrawOutput(int x, int y) {
-            try {
-                outputStream.writeUTF("Draw_" + String.valueOf(x) + "_" + String.valueOf(y));
-            } catch (IOException e) {
-            }
-        }
-
-        public void sendClearOutput() {
-            try {
-                outputStream.writeUTF("Clear");
-            } catch (IOException e) {
-            }
         }
 
         protected void didStartClient() {

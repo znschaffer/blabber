@@ -6,12 +6,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.DataOutputStream;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-import blabber.App.AppPane;
+import blabber.App.AppPane.Connection;
 
 public class DrawingArea extends JPanel {
 
@@ -21,30 +20,30 @@ public class DrawingArea extends JPanel {
   private int squareH = 5;
 
   private JButton clearButton = new JButton("Clear");
-  private AppPane parent;
+  private Connection connection;
 
-  public DrawingArea(AppPane p) {
-    parent = p;
+  public DrawingArea(Connection c) {
+    connection = c;
     this.add(clearButton);
     clearButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent arg0) {
         clear();
-        parent.sendClearOutput();
+        connection.sendClearOutput();
       }
     });
 
     this.addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent e) {
         paintSquare(e.getX(), e.getY());
-        parent.sendDrawOutput(e.getX(), e.getY());
+        connection.sendDrawOutput(e.getX(), e.getY());
       }
     });
 
     addMouseMotionListener(new MouseAdapter() {
       public void mouseDragged(MouseEvent e) {
         paintSquare(e.getX(), e.getY());
-        parent.sendDrawOutput(e.getX(), e.getY());
+        connection.sendDrawOutput(e.getX(), e.getY());
       }
     });
 
