@@ -6,11 +6,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-import blabber.App.AppPane.Connection;
+import blabber.Connection;
+import blabber.MessageArea.Message;
 
 public class DrawingArea extends JPanel {
 
@@ -28,22 +30,40 @@ public class DrawingArea extends JPanel {
     clearButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent arg0) {
-        clear();
-        connection.sendClearOutput();
+        if (connection.isAlive()) {
+          clear();
+          try {
+            connection.sendMessage(new Message(true));
+          } catch (IOException e) {
+            connection.close();
+          }
+        }
       }
     });
 
     this.addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent e) {
-        paintSquare(e.getX(), e.getY());
-        connection.sendDrawOutput(e.getX(), e.getY());
+        if (connection.isAlive()) {
+          paintSquare(e.getX(), e.getY());
+          try {
+            connection.sendMessage(new Message(e.getX(), e.getY()));
+          } catch (IOException ex) {
+            connection.close();
+          }
+        }
       }
     });
 
     addMouseMotionListener(new MouseAdapter() {
       public void mouseDragged(MouseEvent e) {
-        paintSquare(e.getX(), e.getY());
-        connection.sendDrawOutput(e.getX(), e.getY());
+        if (connection.isAlive()) {
+          paintSquare(e.getX(), e.getY());
+          try {
+            connection.sendMessage(new Message(e.getX(), e.getY()));
+          } catch (IOException ex) {
+            connection.close();
+          }
+        }
       }
     });
 

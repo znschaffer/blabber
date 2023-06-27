@@ -3,12 +3,13 @@ package blabber.MessageArea;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
 import blabber.App.AppPane;
-import blabber.App.AppPane.Connection;
+import blabber.Connection;
 
 public class MessageArea {
 
@@ -23,8 +24,18 @@ public class MessageArea {
         listener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                connection.sendText(inputField.getText());
-                appendMessage(new Message(inputField.getText(), "Sent"));
+                if (connection.isAlive()) {
+                    try {
+                        connection.sendMessage(new Message(inputField.getText(), "Sent"));
+                        appendMessage(new Message(inputField.getText(), "Sent"));
+                    } catch (IOException ex) {
+                        // bail and close connection if sending fails
+                        connection.close();
+                        appendMessage(new Message("Failed to send"));
+                    }
+                } else {
+                    appendMessage(new Message("You're not connected to anyone! Get some friends ~"));
+                }
                 inputField.setText(null);
             }
         };

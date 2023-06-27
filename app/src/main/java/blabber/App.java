@@ -6,9 +6,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -16,6 +16,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
+import javax.swing.WindowConstants;
 
 import blabber.DrawingArea.DrawingArea;
 import blabber.MessageArea.Message;
@@ -36,6 +37,7 @@ public class App {
                 frame.pack();
                 frame.setSize(400, 500);
                 frame.setLocationRelativeTo(null);
+                frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                 frame.setVisible(true);
             }
         });
@@ -56,73 +58,6 @@ public class App {
         public Connection connection;
 
         private ServerSocket serverSocket;
-
-        public class Connection {
-            public DataInputStream inputStream;
-
-            public void setInputStream(DataInputStream inputStream) {
-                this.inputStream = inputStream;
-            }
-
-            public DataInputStream getInput() {
-                return this.inputStream;
-            }
-
-            public DataOutputStream outputStream;
-
-            public void setOutput(DataOutputStream outputStream) {
-                this.outputStream = outputStream;
-            }
-
-            public DataOutputStream getOutput() {
-                return this.outputStream;
-            }
-
-            public void sendText(String text) {
-                try {
-                    this.outputStream.writeUTF(text);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
-
-            public String readText() {
-                try {
-                    return this.inputStream.readUTF();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return null;
-                }
-
-            }
-
-            public void sendDrawOutput(int x, int y) {
-                try {
-                    this.outputStream.writeUTF("Draw_" + String.valueOf(x) + "_" + String.valueOf(y));
-                } catch (IOException e) {
-                }
-            }
-
-            public void sendClearOutput() {
-                try {
-                    this.outputStream.writeUTF("Clear");
-                } catch (IOException e) {
-                }
-            }
-
-            public void close() {
-                try {
-                    this.inputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    this.outputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
 
         public AppPane() {
             this.setLayout(new BorderLayout());
@@ -197,13 +132,14 @@ public class App {
                 didStartClient();
                 messageArea.appendMessage(new Message("Connecting to server"));
                 socket = new Socket("localhost", 8080);
-                connection.setInputStream(new DataInputStream(socket.getInputStream()));
-                connection.setOutput(new DataOutputStream(socket.getOutputStream()));
+                connection.setOutput(new ObjectOutputStream(socket.getOutputStream()));
+                connection.setInputStream(new ObjectInputStream(socket.getInputStream()));
 
                 messageArea.appendMessage(new Message("Connected to server\n"));
 
                 createMessageWorker();
             } catch (IOException ex) {
+                ex.printStackTrace();
             }
         }
 
@@ -215,10 +151,11 @@ public class App {
                 messageArea.appendMessage(new Message("Waiting for client"));
                 Socket socket = serverSocket.accept();
                 messageArea.appendMessage(new Message("Client connected\n"));
-                connection.setInputStream(new DataInputStream(socket.getInputStream()));
-                connection.setOutput(new DataOutputStream(socket.getOutputStream()));
+                connection.setOutput(new ObjectOutputStream(socket.getOutputStream()));
+                connection.setInputStream(new ObjectInputStream(socket.getInputStream()));
                 createMessageWorker();
             } catch (IOException ex) {
+                ex.printStackTrace();
 
             }
         }
@@ -242,14 +179,13 @@ public class App {
         protected void createMessageWorker() {
             readWorker = new ReadMessageWorker(connection, new ReadMessageWorker.MessageListener() {
                 @Override
-                public void onMessage(String message) {
-                    if (message.startsWith("Draw_")) {
-                        String[] msgs = message.split("_");
-                        drawArea.paintSquare(Integer.parseInt(msgs[1]), Integer.parseInt(msgs[2]));
-                    } else if (message.startsWith("Clear")) {
+                public void onMessage(Message message) {
+                    if (message.isDrawing) {
+                        drawArea.paintSquare(message.x, message.y);
+                    } else if (message.isClear) {
                         drawArea.clear();
                     } else {
-                        messageArea.appendMessage(new Message(message, "Received"));
+                        messageArea.appendMessage(message);
                     }
                 }
             });
@@ -273,13 +209,8 @@ public class App {
         }
 
         protected void shutdownSocket() {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException ex) {
-                }
-            }
-            if (!readWorker.isDone()) {
+            connection.close();
+            if (readWorker != null && !readWorker.isDone()) {
                 readWorker.stopReading();
             }
         }
@@ -292,7 +223,7 @@ public class App {
                 } catch (IOException ex) {
                 }
             }
-            if (!readWorker.isDone()) {
+            if (readWorker != null && !readWorker.isDone()) {
                 readWorker.stopReading();
             }
         }
